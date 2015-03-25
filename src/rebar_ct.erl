@@ -101,14 +101,14 @@ run_test(TestDir, LogDir, Config, _File) ->
     {Cmd, RawLog} = make_cmd(TestDir, LogDir, Config),
     ?DEBUG("ct_run cmd:~n~p~n", [Cmd]),
     clear_log(LogDir, RawLog),
-    Output = case rebar_config:is_verbose(Config) of
-                 false ->
-                     " >> " ++ RawLog ++ " 2>&1";
-                 true ->
-                     " 2>&1 | tee -a " ++ RawLog ++ " && sh -c \"exit ${PIPESTATUS[0]}\""
-             end,
+    Output = " >> " ++ RawLog ++ " 2>&1",
 
     ShOpts = [{env,[{"TESTDIR", TestDir}]}, return_on_error],
+    case rebar_config:is_verbose(Config) of
+        false -> ok;
+        true ->
+            spawn(fun() -> rebar_utils:sh("tail -f " ++ RawLog, ShOpts) end)
+    end,
     case rebar_utils:sh(Cmd ++ Output, ShOpts) of
         {ok,_} ->
             %% in older versions of ct_run, this could have been a failure
