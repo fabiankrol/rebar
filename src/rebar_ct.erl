@@ -105,7 +105,7 @@ run_test(TestDir, LogDir, Config, _File) ->
                  false ->
                      " >> " ++ RawLog ++ " 2>&1";
                  true ->
-                     " 2>&1 | tee -a " ++ RawLog
+                     " 2>&1 | tee -a " ++ RawLog ++ " && sh -c \"exit ${PIPESTATUS[0]}\""
              end,
 
     ShOpts = [{env,[{"TESTDIR", TestDir}]}, return_on_error],
@@ -152,7 +152,7 @@ check_log(Config,RawLog,Fun) ->
         rebar_utils:sh("grep -e \"TEST COMPLETE\" -e \"{error,make_failed}\" "
                        ++ RawLog, [{use_stdout, false}]),
     MakeFailed = string:str(Msg, "{error,make_failed}") =/= 0,
-    RunFailed = string:str(Msg, ", 0 failed") =/= 0,
+    RunFailed = string:str(Msg, ", 0 failed") =:= 0,
     if
         MakeFailed ->
             show_log(Config, RawLog),
